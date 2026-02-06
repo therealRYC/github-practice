@@ -15,8 +15,9 @@ using Claude Code with GitHub as the central sync point.
 6. [Workflow 5: Cloud Sessions & Teleport](#workflow-5-cloud-sessions--teleport)
 7. [Workflow 6: JetBrains IDEs](#workflow-6-jetbrains-ides)
 8. [GitHub as the Cross-Machine Backbone](#github-as-the-cross-machine-backbone)
-9. [Recommended Multi-Machine Setup](#recommended-multi-machine-setup)
-10. [Subscription Requirements](#subscription-requirements)
+9. [How to Start Each Session](#how-to-start-each-session)
+10. [Recommended Multi-Machine Setup](#recommended-multi-machine-setup)
+11. [Subscription Requirements](#subscription-requirements)
 
 ---
 
@@ -336,6 +337,127 @@ claude   # sign in
 - Push frequently -- even if the code is not done. This is your sync mechanism.
 - Use descriptive branch names: `feature/add-statistics-module`, `fix/divide-by-zero`.
 - When ready, create a **pull request** on GitHub to merge into `main`.
+
+---
+
+## How to Start Each Session
+
+The most important habit for multi-machine work: **always pull when you sit down,
+always push when you stand up.** Beyond that, the steps differ depending on whether
+you're starting something new or continuing existing work.
+
+### Starting a brand new project (do once, on any machine)
+
+```bash
+# 1. Create a folder and initialize Git
+mkdir my-project
+cd my-project
+git init
+
+# 2. Create at least one file (even a placeholder)
+echo "# My Project" > README.md
+
+# 3. First commit
+git add README.md
+git commit -m "Initial commit"
+
+# 4. Create the repo on GitHub and push
+gh repo create my-project --public --source . --push
+#   use --private instead of --public for private repos
+
+# 5. Start Claude Code
+claude
+```
+
+Then on your **other machines**, clone it once:
+```bash
+git clone https://github.com/yourname/my-project.git
+cd my-project
+claude
+```
+
+That's it. The repo now exists on all machines and on GitHub.
+
+### Starting a session on an existing project (daily routine)
+
+Every time you sit down at any machine:
+
+```bash
+cd my-project
+git pull origin main          # grab latest changes from GitHub
+claude                        # start Claude Code
+```
+
+That `git pull` is the critical step -- it ensures you have whatever was pushed
+from your other machines.
+
+### Ending a session (before walking away)
+
+```bash
+# Inside Claude Code, ask it to commit:
+> Commit my changes with a descriptive message
+
+# Then push
+git push origin main
+
+# Or if you're on a feature branch:
+git push origin feature/my-branch
+```
+
+### Working on a feature branch (recommended for non-trivial work)
+
+Branches keep `main` clean while you work on something:
+
+```bash
+# Starting a new branch
+cd my-project
+git pull origin main
+git checkout -b feature/add-login    # create a branch
+claude
+# ... do your work, commit along the way ...
+git push origin feature/add-login    # push the branch
+
+# When the feature is done: create a PR on GitHub to merge into main
+```
+
+Continuing that branch on another machine:
+```bash
+cd my-project
+git fetch origin                          # download branch info from GitHub
+git checkout feature/add-login            # switch to the branch
+git pull origin feature/add-login         # get latest changes on it
+claude                                    # continue working
+```
+
+### Using cloud sessions to bridge machines mid-task
+
+If you know you'll switch machines during a task, start with `&`:
+
+```bash
+cd my-project
+git pull origin main
+claude
+> & Implement the login page with form validation and tests
+```
+
+Later, on a different machine:
+```bash
+cd my-project
+claude
+> /tasks          # see your cloud sessions, press 't' to teleport
+```
+
+### Quick reference: which start sequence?
+
+| Scenario | Steps |
+|----------|-------|
+| **Brand new project** | `git init` > first commit > `gh repo create` > `clone` on other machines |
+| **Sitting down at any machine** | `git pull` > `claude` |
+| **Walking away from any machine** | Commit > `git push` |
+| **Starting a new feature** | `git pull origin main` > `git checkout -b feature/name` > `claude` |
+| **Continuing a feature on another machine** | `git fetch` > `git checkout feature/name` > `git pull` > `claude` |
+| **Switching machines mid-task** | Start with `& task` > teleport on other machine via `/tasks` + `t` |
+| **Picking up a cloud session result** | `git fetch` > `git checkout` the branch it created > review changes |
 
 ---
 
