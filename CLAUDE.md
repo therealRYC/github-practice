@@ -13,7 +13,7 @@ A practice repo for learning Claude Code cloud sessions (`&`) and teleport (`/ta
 ## Project Status
 
 - **Repo created and pushed to GitHub**: yes
-- **Claude GitHub App installed**: not yet — required before `&` commands will work
+- **Claude GitHub App installed**: yes — but `&` commands still fail (see Known Issues below)
 - **Exercises completed**: none yet
 
 ---
@@ -91,6 +91,27 @@ The Claude GitHub App gives Claude Code permission to clone repos, create branch
 
 ### Permissions it gets
 Read/write access to code and pull requests in authorized repos.
+
+---
+
+## Known Issues with `&` / Remote Sessions
+
+As of 2026-02-07, the `&` command fails with:
+```
+Failed to create background session: Failed to create remote session.
+Try running /login and signing in with a claude.ai account (not Console).
+```
+Re-running `/login` does not fix it. This is a widely reported bug — see these GitHub issues:
+- [#16831](https://github.com/anthropics/claude-code/issues/16831) — Remote sessions failing intermittently
+- [#23927](https://github.com/anthropics/claude-code/issues/23927) — Can't create remote session despite Team account
+- [#18409](https://github.com/anthropics/claude-code/issues/18409) — CLI can't start remote session until repo is selected in web UI
+
+### Workarounds to try
+1. ~~Go to **https://claude.ai/code**, select this repo from the dropdown, send any prompt~~ — **tried, did not fix it**
+2. Use `claude --remote "task"` from the shell instead of `&` inside a session
+3. Uninstall and reinstall the Claude GitHub App from GitHub → Settings → Applications
+4. Run `claude --debug` (has helped some users succeed on first attempt)
+5. Run `/logout`, close Claude Code, restart, and re-authenticate
 
 ---
 
