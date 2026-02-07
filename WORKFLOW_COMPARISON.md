@@ -16,8 +16,9 @@ using Claude Code with GitHub as the central sync point.
 7. [Workflow 6: JetBrains IDEs](#workflow-6-jetbrains-ides)
 8. [GitHub as the Cross-Machine Backbone](#github-as-the-cross-machine-backbone)
 9. [How to Start Each Session](#how-to-start-each-session)
-10. [Recommended Multi-Machine Setup](#recommended-multi-machine-setup)
-11. [Subscription Requirements](#subscription-requirements)
+10. [Managing Pull Requests Across Devices](#managing-pull-requests-across-devices)
+11. [Recommended Multi-Machine Setup](#recommended-multi-machine-setup)
+12. [Subscription Requirements](#subscription-requirements)
 
 ---
 
@@ -458,6 +459,130 @@ claude
 | **Continuing a feature on another machine** | `git fetch` > `git checkout feature/name` > `git pull` > `claude` |
 | **Switching machines mid-task** | Start with `& task` > teleport on other machine via `/tasks` + `t` |
 | **Picking up a cloud session result** | `git fetch` > `git checkout` the branch it created > review changes |
+
+---
+
+## Managing Pull Requests Across Devices
+
+You don't need to memorize `gh` commands. The most seamless approach is to let
+Claude Code run them for you using natural language -- but you need `gh` installed
+and authenticated on each machine so Claude has something to call.
+
+### One-time setup: install `gh` on every machine
+
+```bash
+# macOS
+brew install gh
+
+# Ubuntu / Debian
+sudo apt install gh
+
+# Windows (PowerShell)
+winget install GitHub.cli
+
+# Then authenticate (once per machine)
+gh auth login
+# Choose: GitHub.com > HTTPS > Login with a web browser
+# Follow the prompts -- this gives gh (and Claude) permission to manage PRs
+```
+
+**Verify it works:**
+```bash
+gh auth status
+# Should show: Logged in to github.com as yourname
+```
+
+### The seamless workflow: just ask Claude
+
+Once `gh` is installed, you never need to remember the commands yourself.
+Inside any Claude Code session (terminal, VS Code, Cursor, etc.), just ask
+in natural language:
+
+```
+> Create a pull request for this branch
+> What PRs are open right now?
+> Show me the checks on PR #12
+> Merge the PR for feature/add-login
+> What comments are on PR #5?
+> Close PR #3, we're not doing that anymore
+```
+
+Claude translates these into the right `gh` commands and runs them for you.
+This works identically on every machine -- work desktop, home desktop, laptop --
+as long as `gh` is installed and authenticated.
+
+### What Claude does behind the scenes
+
+When you ask Claude to manage PRs, it runs `gh` commands like these. You don't
+need to memorize them, but it helps to know what's happening:
+
+| You say | Claude runs |
+|---------|-----------|
+| "Create a PR" | `gh pr create --title "..." --body "..."` |
+| "What PRs are open?" | `gh pr list` |
+| "Show me PR #12" | `gh pr view 12` |
+| "What are the checks on PR #12?" | `gh pr checks 12` |
+| "Merge PR #12" | `gh pr merge 12` |
+| "Show comments on PR #5" | `gh api repos/owner/repo/pulls/5/comments` |
+| "Close PR #3" | `gh pr close 3` |
+| "Create a repo for this project" | `gh repo create name --source . --push` |
+
+### What happens automatically vs what you do
+
+| Situation | What happens | What you need to do |
+|-----------|-------------|-------------------|
+| **Cloud session (`&`) finishes** | Branch is pushed automatically. PR may be created automatically. | Review the PR on GitHub or ask Claude: "Show me the PR from that cloud session" |
+| **Terminal session: ready to merge** | Nothing automatic -- you're in control. | Ask Claude: "Create a PR for this branch" |
+| **PR needs review** | Nothing automatic. | Ask Claude: "Show me the diff on PR #7" or review on GitHub web |
+| **PR is approved** | Nothing automatic. | Ask Claude: "Merge PR #7" or click Merge on GitHub web |
+| **PR has failing checks** | Nothing automatic. | Ask Claude: "What checks failed on PR #7?" then fix the issues |
+
+### When to use the GitHub web UI instead
+
+While `gh` via Claude handles most operations, the GitHub web UI is better for some tasks:
+
+- **Reviewing large diffs**: The web UI's side-by-side diff viewer with syntax highlighting
+  is easier to read than terminal output for big changes.
+- **Line-by-line code review comments**: The web UI lets you click a line and leave a comment
+  directly on that line of code. `gh` cannot do this.
+- **Managing repository settings**: Branch protection rules, collaborator access, webhooks.
+- **Browsing PR conversations**: Long discussions with multiple reviewers are easier to
+  follow in the web UI.
+- **Merge conflict resolution**: GitHub's web editor for simple conflicts is convenient.
+
+**Rule of thumb**: Use Claude + `gh` for actions (create, merge, check status).
+Use the GitHub web UI for visual review and discussion.
+
+### Cross-machine PR scenario
+
+Here's how a PR flows across your machines:
+
+```
+WORK DESKTOP (morning):
+  $ claude
+  > Create a branch and implement the new search feature
+  > ... Claude works, makes commits ...
+  > Push this branch and create a PR
+  # Claude runs: git push, then gh pr create
+
+LAPTOP (lunch break):
+  $ claude
+  > What's the status of my open PRs?
+  # Claude runs: gh pr list
+  # You see: PR #14 "Add search feature" -- checks passing
+
+HOME DESKTOP (evening):
+  $ claude
+  > Show me PR #14
+  # Claude runs: gh pr view 14
+  > Looks good, merge it
+  # Claude runs: gh pr merge 14
+  > Pull main so we're up to date
+  # Claude runs: git pull origin main
+```
+
+Every step uses the same natural language. Every machine has the same capabilities
+because `gh` is installed and authenticated on all of them.
 
 ---
 
