@@ -24,6 +24,9 @@ A practice repo for learning Claude Code cloud sessions (`&`) and teleport (`/ta
 |------|---------|
 | `calculator.py` | Simple calculator with 3 intentional bugs |
 | `test_calculator.py` | Incomplete tests (only covers add, subtract, multiply) |
+| `CLAUDE_WORKFLOW_GUIDE.md` | Practical playbook for using Claude Code effectively (plan mode, worktrees, verification) |
+| `WORKFLOW_COMPARISON.md` | Comparison of all Claude Code interfaces (CLI, VS Code, Cursor, Desktop, Cloud, JetBrains) |
+| `BACKGROUND_TASKS_&_TROUBLESHOOTING.md` | Troubleshooting guide for `&` background task failures |
 | `PRACTICE_EXERCISES.md` | 5 step-by-step exercises for practicing `&` and teleport |
 | `.gitignore` | Standard Python ignores |
 
@@ -107,21 +110,26 @@ Re-running `/login` does not fix it. This is a widely reported bug — see these
 - [#18409](https://github.com/anthropics/claude-code/issues/18409) — CLI can't start remote session until repo is selected in web UI
 
 ### Workarounds to try
-1. ~~Go to **https://claude.ai/code**, select this repo from the dropdown, send any prompt~~ — **tried, did not fix it**
+1. Go to **https://claude.ai/code**, select this repo from the dropdown — this registers the repo on the backend (see `BACKGROUND_TASKS_&_TROUBLESHOOTING.md` for details). **Status**: tried once without success; may require retry or combining with steps below.
 2. Use `claude --remote "task"` from the shell instead of `&` inside a session
 3. Uninstall and reinstall the Claude GitHub App from GitHub → Settings → Applications
 4. Run `claude --debug` (has helped some users succeed on first attempt)
 5. Run `/logout`, close Claude Code, restart, and re-authenticate
+6. Full auth reset: delete `~/.claude/.credentials.json`, restart Claude Code, `/login`, then select repo in web UI and retry
 
 ---
 
 ## Practice Exercises (summary)
 
-1. **Basic `&` task** — fix divide-by-zero bug via cloud
-2. **Add missing tests** — have the cloud write tests for untested functions
-3. **Teleporting** — send a task, then teleport into it with `/tasks` + `t`
-4. **Parallel tasks** — launch two `&` tasks simultaneously
-5. **Plan locally, execute remotely** — design approach locally, send to cloud
+Each exercise has both cloud (`&`) and local alternatives, so you can practice
+regardless of whether remote sessions are working.
+
+1. **Fix a bug** — fix divide-by-zero (cloud or local branch)
+2. **Add missing tests** — write tests for untested functions
+3. **Plan Mode** — practice planning before executing
+4. **Parallel sessions** — run multiple Claude instances with worktrees
+5. **Plan + parallel execution** — plan in CLI, execute in parallel (Pattern D)
+6. **Cross-machine memory** — practice CLAUDE.md session handoffs
 
 See `PRACTICE_EXERCISES.md` for full details.
 

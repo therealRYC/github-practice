@@ -24,18 +24,18 @@ using Claude Code with GitHub as the central sync point.
 
 ## Quick Comparison Matrix
 
-| Feature | CLI (Terminal) | VS Code | Cursor | Desktop App | Cloud (`&`) |
-|---------|---------------|---------|--------|-------------|-------------|
-| **Visual diffs** | No (text only) | Yes | Yes | Yes | Via web UI |
-| **Runs locally** | Yes | Yes | Yes | Yes | No (cloud VM) |
-| **Async / background** | No | No | No | Yes (remote) | Yes |
-| **Multi-machine sync** | Manual (Git) | Manual (Git) | Manual (Git) | Remote sessions | Native |
-| **Needs IDE** | No | Yes | Yes | No | No |
-| **Scriptable / CI-friendly** | Yes | No | No | No | Partial |
-| **Teleport support** | Yes (receive) | No | No | No | Yes (send) |
-| **Parallel sessions** | Multiple tabs | Multiple tabs | Multiple tabs | Worktree-based | Multiple `&` |
-| **OS support** | macOS, Linux, Windows (WSL) | macOS, Linux, Windows | macOS, Linux, Windows | macOS only | Any (web-based) |
-| **Best for** | Power users, scripting | Visual code review | Fast inline edits | Non-terminal users | Cross-machine work |
+| Feature | CLI (Terminal) | VS Code | Cursor | Desktop App | Cloud (`&`) | JetBrains |
+|---------|---------------|---------|--------|-------------|-------------|-----------|
+| **Visual diffs** | No (text only) | Yes | Yes | Yes | Via web UI | Yes |
+| **Runs locally** | Yes | Yes | Yes | Yes | No (cloud VM) | Yes |
+| **Async / background** | No | No | No | Yes (remote) | Yes | No |
+| **Multi-machine sync** | Manual (Git) | Manual (Git) | Manual (Git) | Remote sessions | Native | Manual (Git) |
+| **Needs IDE** | No | Yes | Yes | No | No | Yes |
+| **Scriptable / CI-friendly** | Yes | No | No | No | Partial | No |
+| **Teleport support** | Yes (receive) | No | No | No | Yes (send) | No |
+| **Parallel sessions** | Multiple tabs | Multiple tabs | Multiple tabs | Worktree-based | Multiple `&` | Multiple tabs |
+| **OS support** | macOS, Linux, Windows (WSL) | macOS, Linux, Windows | macOS, Linux, Windows | macOS only | Any (web-based) | macOS, Linux, Windows |
+| **Best for** | Power users, scripting | Visual code review | Fast inline edits | Non-terminal users | Cross-machine work | JetBrains users |
 
 ---
 
@@ -59,9 +59,12 @@ claude   # follow browser-based sign-in prompt
 
 ### Key capabilities
 - **Plan mode**: Ask Claude to plan before implementing. Review the plan, then approve.
-- **Extended thinking**: Toggle on deeper reasoning for complex tasks.
+- **Extended thinking**: Toggle on deeper reasoning for complex tasks (best for debugging and architecture).
 - **CLAUDE.md**: Project-level instructions Claude reads automatically (this repo has one).
 - **Slash commands**: Custom commands in `.claude/commands/` for repeatable workflows.
+- **Session resume**: `claude --continue` resumes the last session; `claude --resume` picks from past sessions.
+- **MCP servers**: Connect to external tools (databases, browsers, APIs) via `claude mcp add`.
+- **Hooks**: Auto-run formatters, linters, or checks after edits via `.claude/settings.json`.
 - **Unix composability**: Pipe data in, chain with other tools, use in CI/CD.
 
 ### Strengths
@@ -78,9 +81,10 @@ claude   # follow browser-based sign-in prompt
 
 ### Cross-machine strategy
 - Git push/pull is your sync mechanism for code changes.
-- Conversations do not sync. If you need to continue work on another machine,
-  commit + push from machine A, pull on machine B, start a fresh Claude session.
-- For continuity, start tasks as cloud sessions (`&`) instead -- see Workflow 5.
+- Conversations do not sync across machines. On the **same machine**, use `claude --continue`
+  to resume your last session, or `claude --resume` to pick from past sessions.
+- For cross-machine continuity, commit + push from machine A, pull on machine B,
+  start a fresh Claude session. Or start tasks as cloud sessions (`&`) -- see Workflow 5.
 
 ---
 
@@ -179,21 +183,44 @@ remote session management, and one-click integrations (connectors).
 - **Remote sessions**: Launch long-running tasks on Anthropic cloud VMs.
 - **Connectors**: One-click connections to Slack, GitHub, Linear, Notion, Google Calendar, etc.
 
+### Local vs Remote sessions (important distinction)
+
+The Desktop app offers **two kinds** of sessions:
+
+| | Local session | Remote session |
+|---|---|---|
+| **Runs on** | Your machine | Anthropic cloud VM |
+| **Uses your tools** | Yes (your R, Python, Node, etc.) | No (cloud environment only) |
+| **Persists after closing app** | No | Yes |
+| **Worktree isolation** | Yes (for Git repos) | Yes |
+| **Resource usage** | Your CPU/RAM | Cloud resources |
+
+**Local sessions** are the default. They use your machine's files and installed tools
+directly. Multiple local sessions on the same Git repo each get their own worktree,
+so they won't conflict.
+
+**Remote sessions** run on Anthropic's infrastructure. They're useful for long-running
+tasks you want to continue after closing the app, but the cloud environment may not
+have specialized tools (e.g., R with your packages) installed.
+
 ### Strengths
 - Most accessible entry point -- no terminal or IDE knowledge needed.
 - Visual diff review is excellent.
+- Local parallel sessions use worktree isolation without conflicts.
 - Remote sessions mean you can close the app and check back later.
-- Worktree isolation prevents parallel sessions from conflicting.
 
 ### Weaknesses
 - **macOS only** as of February 2026. Windows support is on the roadmap.
 - Less flexible than CLI for scripting and automation.
 - Connectors require granting access to third-party services.
+- Remote sessions may lack specialized tools you have locally (R packages, etc.).
 
 ### Cross-machine strategy
 - Remote sessions run on Anthropic's cloud and can be accessed from any Mac where
   you are logged into your Anthropic account.
 - Local sessions are machine-specific and do not sync.
+- Use `CLAUDE.md` as your cross-machine memory — ask Claude to update it with session
+  notes before wrapping up (see the Workflow Guide for details).
 
 ---
 
@@ -295,6 +322,16 @@ Similar to the VS Code extension but for the JetBrains ecosystem.
 
 Regardless of which workflow you choose, **GitHub is your sync mechanism** for working
 across machines. Here is the basic Git workflow that ties everything together:
+
+### Clone vs Pull (important distinction)
+
+These are different operations that beginners often confuse:
+
+- **Clone** = download the entire repository for the first time. You do this **once
+  per machine**. After that, the repo lives on your machine.
+- **Pull** = update your existing local copy with the latest changes from GitHub.
+  Quick and lightweight — only downloads what changed. You do this **every time you
+  sit down**.
 
 ### Essential Git commands for multi-machine work
 
@@ -663,6 +700,7 @@ equivalent API usage for heavy developers.
 | No terminal, visual-first experience | **Claude Desktop App** |
 | Work across multiple machines seamlessly | **Cloud Sessions (`&`)** |
 | Async tasks that run while you sleep | **Cloud Sessions (`&`)** |
+| JetBrains-native experience (IntelliJ, PyCharm, etc.) | **JetBrains Plugin** |
 | Automate PR reviews and issue triage | **GitHub Actions** |
 
 The workflows are not mutually exclusive. Many developers use the CLI for quick tasks,
