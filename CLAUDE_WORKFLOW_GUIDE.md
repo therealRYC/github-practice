@@ -133,7 +133,7 @@ tabs per worktree so they never lose track.
 |------|---------------|
 | **git** | Likely already installed. Check with `git --version` |
 | **GitHub CLI (`gh`)** | `brew install gh` (macOS) or [cli.github.com](https://cli.github.com) |
-| **Claude Code CLI** | `npm install -g @anthropic-ai/claude-code` |
+| **Claude Code CLI** | `curl -fsSL https://claude.ai/install.sh \| bash` (or `npm i -g @anthropic-ai/claude-code`) |
 | **claude.ai account** | Pro or Max plan needed for cloud sessions (`&`) |
 
 ### Terminal setup
@@ -158,7 +158,7 @@ changes.
 
 ## The Daily Workflow
 
-Boris uses four patterns depending on the situation. Here they are, from simplest to
+Boris uses several patterns depending on the situation. Here they are, from simplest to
 most advanced.
 
 ### Pattern A: Local Terminal Session
@@ -261,7 +261,39 @@ Each worktree is fully isolated — no conflicts possible.
 **When to use**: You have 2+ independent tasks. The tasks don't touch the same files
 (or you're using worktrees). You want to get more done in the same amount of time.
 
-### Pattern D: Cross-Device Workflow
+### Pattern D: CLI Planning → Desktop Parallel Execution
+
+Plan interactively in the CLI (where the back-and-forth Q&A is strongest), then
+spin up multiple parallel sessions in the Desktop app to execute.
+
+```bash
+# Step 1: Plan in CLI (strongest for interactive refinement)
+claude
+> Plan how to refactor the calculator module into a class-based design.
+> What about edge cases for negative exponents?
+> OK, write this plan to CLAUDE.md so parallel sessions can follow it.
+
+# Step 2: Commit and push the plan
+> Commit and push everything
+
+# Step 3: Open Desktop app, open the same repo
+# Click "+ New session" multiple times — each gets its own worktree
+#   Session 1: "Implement the Calculator class per the plan in CLAUDE.md"
+#   Session 2: "Write comprehensive tests per the plan in CLAUDE.md"
+#   Session 3: "Update documentation per the plan in CLAUDE.md"
+
+# Step 4: When sessions finish, merge branches into main
+```
+
+**Why this works**: The CLI's Plan Mode interaction is great for iterative thinking.
+The Desktop app's parallel sessions with worktree isolation are great for execution.
+Writing the plan to `CLAUDE.md` bridges the two — the Desktop sessions read it
+automatically and follow the agreed-upon approach.
+
+**When to use**: You have multiple independent tasks and want the best of both
+interfaces — CLI for planning, Desktop for parallel execution.
+
+### Pattern E: Cross-Device Workflow
 
 Start work in one place, continue in another.
 
@@ -377,6 +409,30 @@ file is about 2,500 tokens and gets updated multiple times per week.
 - Each directory can have its own CLAUDE.md for nested context
 
 This repo's own `CLAUDE.md` is an example — look at it to see the format in practice.
+
+### Using CLAUDE.md as cross-machine memory
+
+Conversations don't sync across machines, but `CLAUDE.md` does (via Git). This makes
+it your primary tool for continuity across devices.
+
+**Before ending a session**, ask Claude:
+
+```
+Update CLAUDE.md with what we accomplished today, current status, and next steps.
+```
+
+Claude will write a summary into `CLAUDE.md`. Commit and push. When you pull on
+another machine, Claude reads it automatically and picks up where you left off.
+
+**Other memory tools**:
+- `claude --continue` — resumes the most recent conversation (same machine only)
+- `claude --resume` — interactive picker for past sessions (same machine only)
+- `/compact` — condenses the current conversation into a summary (stays local)
+- **Session summaries** — Claude auto-saves summaries to `~/.claude/projects/` locally,
+  but these don't sync across machines
+
+**The practical workflow**: Git-committed `CLAUDE.md` is the only memory that follows
+you between machines. Everything else is local-only. Make updating it a habit.
 
 ---
 
@@ -588,6 +644,89 @@ for automated workflows.
 
 ---
 
+## Key Features Worth Knowing
+
+### Extended Thinking
+
+Extended thinking lets Claude reason more deeply before responding. It's especially
+useful for complex debugging, architectural decisions, and multi-step refactors.
+
+**How to use it**:
+- Toggle on/off with `Shift+Tab` cycling through modes, or just ask: "Think deeply about this"
+- In the CLI: `claude --model opus` for the most capable reasoning
+- Best for: debugging tricky issues, planning complex refactors, reviewing security implications
+
+Extended thinking costs more tokens but significantly improves quality on hard problems.
+Don't use it for simple tasks — save it for when you're stuck or the stakes are high.
+
+### Session Continuity (`--continue` and `--resume`)
+
+Claude Code conversations are local and don't sync across machines. But you can
+resume previous sessions on the same machine:
+
+```bash
+# Continue the most recent conversation
+claude --continue
+
+# Resume a specific past session (interactive picker)
+claude --resume
+```
+
+This is useful when you close your terminal accidentally or want to pick up where you
+left off after a break. Note: this only works on the same machine where the session ran.
+
+### MCP Servers (Model Context Protocol)
+
+MCP lets you connect Claude Code to external tools and data sources — databases,
+APIs, browsers, design tools, and more.
+
+```bash
+# Add an MCP server
+claude mcp add server-name -- command arg1 arg2
+
+# List configured servers
+claude mcp list
+
+# Example: add a filesystem MCP server
+claude mcp add filesystem -- npx -y @anthropic-ai/mcp-filesystem /path/to/dir
+```
+
+**Common MCP use cases**:
+- **Browser automation**: Test web UIs, take screenshots, interact with pages
+- **Database access**: Query databases directly from Claude Code
+- **API integration**: Connect to Slack, Linear, Jira, etc.
+
+MCP servers are configured per-project (in `.claude/`) or globally.
+
+### Hooks
+
+Hooks run shell commands automatically in response to Claude Code events. They're
+powerful for enforcing team standards and catching issues early.
+
+```json
+// .claude/settings.json
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "command": "black --check $CLAUDE_FILE_PATH || true"
+      }
+    ]
+  }
+}
+```
+
+**Hook events**:
+- `PreToolUse` — runs before a tool executes (can block it)
+- `PostToolUse` — runs after a tool executes (good for formatters, linters)
+- `Notification` — runs when Claude sends a notification
+
+Hooks are how Boris's team auto-formats code on every edit — catching "the last 10%
+of problems that would otherwise fail CI."
+
+---
+
 ## Quick Reference Card
 
 ### Essential commands
@@ -612,7 +751,8 @@ for automated workflows.
 | Focused single task | Local terminal (Pattern A) |
 | Fire-and-forget task | Cloud session (Pattern B) |
 | Multiple independent tasks | Parallel sessions (Pattern C) |
-| Switching devices | Cloud + teleport (Pattern D) |
+| Plan carefully, then execute in parallel | CLI + Desktop (Pattern D) |
+| Switching devices | Cloud + teleport (Pattern E) |
 | Task is complex | Plan Mode first |
 | Claude keeps making the same mistake | Update CLAUDE.md |
 | You repeat the same workflow | Create a slash command |
