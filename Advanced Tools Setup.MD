@@ -9,7 +9,7 @@ Claude Code into a full-powered research workstation connected to biological dat
 bioinformatics tools, and lab platforms.
 
 **Author**: Robert Chen (Fowler Lab, UW)
-**Last updated**: 2026-02-14
+**Last updated**: 2026-02-16 (install instructions verified against actual repos)
 
 ---
 
@@ -24,6 +24,7 @@ bioinformatics tools, and lab platforms.
 2. [MCP (Model Context Protocol) Overview](#2-mcp-model-context-protocol-overview)
 3. [BioClaude: Full Bio Research Setup](#3-bioclaude-full-bio-research-setup)
    - [Quick Start (5 minutes)](#quick-start-5-minutes)
+   - [Official Anthropic Life Sciences Connectors](#official-anthropic-life-sciences-connectors)
    - [Tier 1: Core Bio Databases](#tier-1-core-bio-databases)
    - [Tier 2: Lab Platforms](#tier-2-lab-platforms)
    - [Tier 3: Bioinformatics CLI Tools](#tier-3-bioinformatics-cli-tools)
@@ -349,6 +350,100 @@ That's it. You now have a research-connected Claude. The sections below go deepe
 
 ---
 
+### Official Anthropic Life Sciences Connectors
+
+Anthropic maintains an official set of life sciences connectors through the
+[anthropics/life-sciences](https://github.com/anthropics/life-sciences) GitHub
+marketplace. These are the connectors featured on the
+[Claude for Life Sciences](https://claude.com/resources/tutorials/getting-started-with-claude-for-life-sciences)
+page.
+
+**Claude Desktop (claude.ai):** Most of these appear in Settings > Connectors
+(for remote HTTP servers) or Settings > Extensions (for local bundles). Just
+search by name and enable.
+
+**Claude Code (CLI):** Use `claude mcp add` as shown below.
+
+#### Scientific Research & Discovery
+
+```bash
+# PubMed — millions of biomedical research articles and clinical studies, no auth required
+# Official Anthropic-hosted connector.
+# Tutorial: https://claude.com/resources/tutorials/using-the-pubmed-connector-in-claude
+claude mcp add --transport http pubmed https://pubmed.mcp.claude.com/mcp
+
+# bioRxiv / medRxiv — 260,000+ preprints, no auth required
+# By deepsense.ai. Docs: https://docs.mcp.deepsense.ai/guides/biorxiv.html
+claude mcp add --transport http biorxiv https://mcp.deepsense.ai/biorxiv/mcp
+
+# ChEMBL — 2.4M+ bioactive compounds, targets, activity measurements, no auth required
+# By deepsense.ai. Docs: https://docs.mcp.deepsense.ai/guides/chembl.html
+claude mcp add --transport http chembl https://mcp.deepsense.ai/chembl/mcp
+
+# Open Targets — drug target identification and prioritization (via BioContextAI above)
+# Already covered by the BioContextAI server in Quick Start.
+
+# Synapse.org — discover biomedical datasets, project structure, data assets
+# By Sage Bionetworks. Requires free Synapse account (https://www.synapse.org).
+# Auth: OAuth2 browser login on first use.
+# GitHub: https://github.com/Sage-Bionetworks/synapse-mcp
+claude mcp add --transport http synapse https://mcp.synapse.org/mcp
+
+# Scholar Gateway by Wiley — authenticated access to scientific research papers
+# Requires free CONNECT account (Wiley SSO). Trial access through Feb 28, 2026.
+# Docs: https://docs.scholargateway.ai/
+claude mcp add --transport http scholar-gateway https://connector.scholargateway.ai/mcp
+
+# Owkin Pathology Explorer — analyze H&E pathology slides (TCGA), quantify cell
+# types, spatial tumor microenvironment analysis, cohort-level survival analysis
+# Auth required (Owkin account).
+claude mcp add --transport http owkin https://mcp.k.owkin.com/mcp
+```
+
+#### Clinical Operations & Regulatory
+
+```bash
+# ClinicalTrials.gov — 500,000+ clinical studies from NIH/NLM registry, no auth required
+# By deepsense.ai. Docs: https://docs.mcp.deepsense.ai/guides/clinical_trials.html
+claude mcp add --transport http clinical-trials https://mcp.deepsense.ai/clinical_trials/mcp
+
+# Medidata — clinical trial platform data (Rave EDC, predictive site ranking)
+# Requires Medidata platform credentials. Site Ranking needs Intelligent Trials subscription.
+# Tutorial: https://claude.com/resources/tutorials/using-the-medidata-connector-in-claude
+claude mcp add --transport http medidata https://mcp.imedidata.com/mcp
+```
+
+#### Local Extensions (Desktop/stdio)
+
+These run locally on your machine rather than connecting to a remote server.
+
+```bash
+# 10x Genomics Cloud — single cell and spatial analysis
+# Requires Node.js and a 10x Genomics Cloud access token.
+# Generate token at: https://cloud.10xgenomics.com/account/security
+# GitHub: https://github.com/10XGenomics/txg-mcp
+# Docs: https://www.10xgenomics.com/support/software/cloud-analysis/latest/tutorials/cloud-mcp-server-code
+#
+# For Claude Desktop: Settings > Extensions > "10x Genomics" > Install
+# For Claude Code: follow the plugin method below or see the 10x docs for manual setup.
+
+# ToolUniverse — 600+ vetted scientific tools (ML models, datasets, APIs)
+# By MIMS Harvard (Marinka Zitnik Lab).
+# GitHub: https://github.com/mims-harvard/ToolUniverse
+# Docs: https://zitniklab.hms.harvard.edu/ToolUniverse/guide/building_ai_scientists/claude_code.html
+pip install tooluniverse
+claude mcp add --transport stdio tooluniverse -- tooluniverse-smcp-stdio --compact-mode
+
+# Optional: load only specific tool categories
+# claude mcp add --transport stdio tooluniverse -- tooluniverse-smcp-stdio --compact-mode --tool-categories uniprot,chembl,opentarget
+
+# Optional: set API keys for enhanced access
+# export NCBI_API_KEY=your_key
+# export SEMANTIC_SCHOLAR_API_KEY=your_key
+```
+
+---
+
 ### Tier 1: Core Bio Databases
 
 These MCP servers connect Claude directly to the major biological databases.
@@ -388,33 +483,38 @@ claude mcp add --transport stdio biocontext-local -- uvx biocontext_kb@latest
 
 #### Individual Database Servers (Augmented Nature Suite)
 
-If you need deeper access to specific databases beyond what BioContextAI provides:
+If you need deeper access to specific databases beyond what BioContextAI provides.
+
+**Prerequisites:** Node.js (v16+) and npm. All four servers are TypeScript projects.
 
 ```bash
 # UniProt — 26 tools: protein search, sequence retrieval, feature analysis, homologs
 # GitHub: Augmented-Nature/Augmented-Nature-UniProt-MCP-Server
 git clone https://github.com/Augmented-Nature/Augmented-Nature-UniProt-MCP-Server.git
-cd Augmented-Nature-UniProt-MCP-Server && pip install -r requirements.txt
-claude mcp add --transport stdio uniprot -- python server.py
+cd Augmented-Nature-UniProt-MCP-Server && npm install && npm run build
+claude mcp add --transport stdio uniprot -- node build/index.js
 
 # AlphaFold — structure retrieval, confidence analysis, multi-format downloads
 # GitHub: Augmented-Nature/AlphaFold-MCP-Server
 git clone https://github.com/Augmented-Nature/AlphaFold-MCP-Server.git
-cd AlphaFold-MCP-Server && pip install -r requirements.txt
-claude mcp add --transport stdio alphafold -- python server.py
+cd AlphaFold-MCP-Server && npm install && npm run build
+claude mcp add --transport stdio alphafold -- node build/index.js
 
 # PDB — experimental structures, quality metrics, cross-references
 # GitHub: Augmented-Nature/PDB-MCP-Server
 git clone https://github.com/Augmented-Nature/PDB-MCP-Server.git
-cd PDB-MCP-Server && pip install -r requirements.txt
-claude mcp add --transport stdio pdb -- python server.py
+cd PDB-MCP-Server && npm install && npm run build
+claude mcp add --transport stdio pdb -- node build/index.js
 
 # Reactome — pathway search, gene-to-pathways, disease pathways (8 tools)
 # GitHub: Augmented-Nature/Reactome-MCP-Server
 git clone https://github.com/Augmented-Nature/Reactome-MCP-Server.git
-cd Reactome-MCP-Server && pip install -r requirements.txt
-claude mcp add --transport stdio reactome -- python server.py
+cd Reactome-MCP-Server && npm install && npm run build
+claude mcp add --transport stdio reactome -- node build/index.js
 ```
+
+**Note:** For the `claude mcp add` commands above, use the absolute path to `build/index.js`
+(e.g., `node /home/user/Augmented-Nature-UniProt-MCP-Server/build/index.js`).
 
 ---
 
@@ -461,11 +561,9 @@ claude mcp add --transport http benchling https://<tenant>.mcp.benchling.com/mcp
 Search, retrieve, and manage scientific protocols.
 
 ```bash
-# Check for latest install instructions:
-# https://glama.ai/mcp/servers/@hqn21/protocols-io-mcp-server
-git clone https://github.com/hqn21/protocols-io-mcp-server.git
-cd protocols-io-mcp-server && npm install
-claude mcp add --transport stdio protocols -- node index.js
+# GitHub: hqn21/protocols-io-mcp-server (Python project, not Node)
+pip install protocols-io-mcp
+claude mcp add --transport stdio protocols -- protocols-io-mcp
 ```
 
 ---
@@ -494,12 +592,14 @@ conda install -c bioconda blast samtools bwa seqkit fastqc multiqc
 | `bio-mcp-fastqc` | FastQC/MultiQC | Sequencing data quality control |
 
 ```bash
-# Example: Install and configure bio-mcp-blast
-pip install bio-mcp-blast
+# Example: Install and configure bio-mcp-blast (not on PyPI — install from source)
+git clone https://github.com/bio-mcp/bio-mcp-blast.git
+cd bio-mcp-blast && pip install -e .
 claude mcp add --transport stdio blast -- bio-mcp-blast
 
-# Example: Install and configure bio-mcp-samtools
-pip install bio-mcp-samtools
+# Example: Install and configure bio-mcp-samtools (not on PyPI — install from source)
+git clone https://github.com/bio-mcp/bio-mcp-samtools.git
+cd bio-mcp-samtools && pip install -e .
 claude mcp add --transport stdio samtools -- bio-mcp-samtools
 ```
 
@@ -519,11 +619,10 @@ claude mcp add --transport stdio samtools -- bio-mcp-samtools
 #### PubMed MCP Server
 
 ```bash
-# Option A: Dedicated PubMed server (cyanheads)
+# Option A: Dedicated PubMed server (cyanheads) — requires Node.js >= 20
 # GitHub: cyanheads/pubmed-mcp-server
-git clone https://github.com/cyanheads/pubmed-mcp-server.git
-cd pubmed-mcp-server && npm install
-claude mcp add --transport stdio pubmed -- node dist/index.js
+# Easiest: use npx (no manual clone needed)
+claude mcp add --transport stdio pubmed -- npx @cyanheads/pubmed-mcp-server
 
 # Option B: Multi-source paper search (arXiv + PubMed + bioRxiv + medRxiv)
 # GitHub: openags/paper-search-mcp
@@ -553,10 +652,9 @@ claude mcp add --transport stdio biomcp -- biomcp run
 Gene set enrichment analysis across GO, KEGG, Reactome, WikiPathways, and more.
 
 ```bash
-# GitHub: tianqitang1/enrichr-mcp-server
-git clone https://github.com/tianqitang1/enrichr-mcp-server.git
-cd enrichr-mcp-server && pip install -r requirements.txt
-claude mcp add --transport stdio enrichr -- python server.py
+# GitHub: tianqitang1/enrichr-mcp-server (TypeScript project, not Python)
+# Easiest: use npx (no manual clone needed)
+claude mcp add --transport stdio enrichr -- npx -y enrichr-mcp-server
 ```
 
 **Example:**
@@ -567,13 +665,16 @@ claude mcp add --transport stdio enrichr -- python server.py
 
 #### Holy Bio MCP (Longevity/Aging Research + gget)
 
-Aggregates multiple bio sub-servers including `gget` (popular Python genomics library).
+Aggregates multiple bio sub-servers including `gget` (popular Python genomics library),
+OpenGenes (aging/longevity), and BioThings APIs.
 
 ```bash
-# Wraps gget for Ensembl, NCBI, UniProt queries
-# Plus OpenGenes (aging/longevity) and BioThings APIs
 # See: https://lobehub.com/mcp/longevity-genie-holy-bio-mcp
-pip install holy-bio-mcp
+# NOTE: "holy-bio-mcp" is NOT available on PyPI as of Feb 2026.
+# Check the link above for current install instructions. You may need to
+# install from source:
+git clone https://github.com/longevity-genie/holy-bio-mcp.git
+cd holy-bio-mcp && pip install -e .
 claude mcp add --transport stdio holybio -- holy-bio-mcp
 ```
 
@@ -583,26 +684,46 @@ claude mcp add --transport stdio holybio -- holy-bio-mcp
 
 Complete reference of all biological MCP servers discussed in this guide.
 
+### Official Anthropic Life Sciences Connectors
+
+| Server | Transport | What It Provides | Install | Auth Required |
+|--------|-----------|-----------------|---------|---------------|
+| **PubMed** | HTTP | Millions of biomedical articles (Anthropic-hosted) | One command | No |
+| **bioRxiv / medRxiv** | HTTP | 260k+ preprints (biology + medicine) | One command | No |
+| **ChEMBL** | HTTP | 2.4M+ bioactive compounds, targets, activities | One command | No |
+| **ClinicalTrials.gov** | HTTP | 500k+ clinical studies (NIH/NLM) | One command | No |
+| **Synapse.org** | HTTP | Biomedical datasets, project structure | One command | Yes (OAuth2) |
+| **Scholar Gateway (Wiley)** | HTTP | Scientific research papers | One command | Yes (CONNECT SSO) |
+| **Owkin Pathology Explorer** | HTTP | H&E pathology slide analysis (TCGA) | One command | Yes |
+| **Medidata** | HTTP | Clinical trial platform (Rave EDC, site ranking) | One command | Yes (Medidata acct) |
+| **10x Genomics Cloud** | stdio (MCPB) | Single cell + spatial analysis | Extension/plugin | Yes (access token) |
+| **ToolUniverse** | stdio | 600+ scientific tools (ML, APIs, datasets) | pip install | Optional API keys |
+
+All by deepsense.ai (bioRxiv, ChEMBL, ClinicalTrials.gov), Sage Bionetworks (Synapse),
+Wiley (Scholar Gateway), Owkin, Medidata, 10x Genomics, and MIMS Harvard (ToolUniverse).
+
+### Community & Third-Party Servers
+
 | Server | Transport | Databases/Tools | Install Complexity | Best For |
 |--------|-----------|----------------|-------------------|----------|
 | **BioContextAI** | HTTP | 20+ databases (UniProt, AlphaFold, Ensembl, KEGG, GO, etc.) | One command | General bio research (start here) |
-| **BioRender** | HTTP | 50k+ scientific icons/templates | One command | Figures, posters, graphical abstracts |
+| **BioRender** | HTTP | 50k+ scientific icons/templates | One command (needs account) | Figures, posters, graphical abstracts |
 | **Benchling** | HTTP | Your lab's ELN, registry, inventory | Admin setup required | Labs using Benchling |
 | **BioMCP** | stdio | PubMed, ClinicalTrials.gov, genomic variants | pip install | Literature + clinical + variants |
-| **UniProt MCP** | stdio | UniProt (26 tools) | git clone + pip | Deep protein research |
-| **AlphaFold MCP** | stdio | AlphaFold DB | git clone + pip | Predicted structures |
-| **PDB MCP** | stdio | Protein Data Bank | git clone + pip | Experimental structures |
-| **Reactome MCP** | stdio | Reactome pathways | git clone + pip | Pathway analysis |
-| **Enrichr MCP** | stdio | GO, KEGG, Reactome, WikiPathways, MSigDB | git clone + pip | Gene set enrichment |
-| **PubMed MCP** | stdio | PubMed/NCBI | git clone + npm | Literature search |
+| **UniProt MCP** | stdio | UniProt (26 tools) | git clone + npm + build | Deep protein research |
+| **AlphaFold MCP** | stdio | AlphaFold DB | git clone + npm + build | Predicted structures |
+| **PDB MCP** | stdio | Protein Data Bank | git clone + npm + build | Experimental structures |
+| **Reactome MCP** | stdio | Reactome pathways | git clone + npm + build | Pathway analysis |
+| **Enrichr MCP** | stdio | GO, KEGG, Reactome, WikiPathways, MSigDB | npx (one command) | Gene set enrichment |
+| **PubMed MCP** | stdio | PubMed/NCBI | npx (one command) | Literature search |
 | **Paper Search** | stdio | arXiv + PubMed + bioRxiv + medRxiv | pip install | Multi-source lit search |
-| **bio-mcp-blast** | stdio | NCBI BLAST | pip + conda | Sequence similarity |
-| **bio-mcp-samtools** | stdio | SAMtools | pip + conda | BAM/SAM processing |
-| **bio-mcp-bwa** | stdio | BWA | pip + conda | Read alignment |
-| **bio-mcp-seqkit** | stdio | SeqKit | pip + conda | Sequence utilities |
-| **bio-mcp-fastqc** | stdio | FastQC/MultiQC | pip + conda | Sequencing QC |
-| **Holy Bio MCP** | stdio | gget, OpenGenes, BioThings | pip install | Genomics + aging research |
-| **Protocols.io** | stdio | Protocols.io | git clone + npm | Protocol management |
+| **bio-mcp-blast** | stdio | NCBI BLAST | git clone + pip + conda | Sequence similarity |
+| **bio-mcp-samtools** | stdio | SAMtools | git clone + pip + conda | BAM/SAM processing |
+| **bio-mcp-bwa** | stdio | BWA | git clone + pip + conda | Read alignment |
+| **bio-mcp-seqkit** | stdio | SeqKit | git clone + pip + conda | Sequence utilities |
+| **bio-mcp-fastqc** | stdio | FastQC/MultiQC | git clone + pip + conda | Sequencing QC |
+| **Holy Bio MCP** | stdio | gget, OpenGenes, BioThings | git clone + pip (not on PyPI) | Genomics + aging research |
+| **Protocols.io** | stdio | Protocols.io | pip install | Protocol management |
 
 ---
 
